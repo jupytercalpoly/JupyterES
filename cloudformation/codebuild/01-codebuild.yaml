@@ -1,0 +1,11 @@
+namespace: ${namespace}
+stacker_bucket: ${stacker_bucket_name}
+
+stacks:
+
+  # Create CodeBuild Project for CI/CD
+  codebuild:
+    template_path: templates/codebuild.yaml
+    variables:
+      pEnvName: ${default environment::dev}
+      pRepoURL: ${repoURL}

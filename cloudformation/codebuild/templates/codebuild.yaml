@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CodeBuild - Role, AccessPolicy, Project, Trigger'
+
+Parameters:
+
+  pEnvName:
+    Type: String
+    Description: 'Environment Name e.g. dev, qa, prod'
+    Default: dev
+
+  pRepoURL:
+    Type: String
+    Description: 'URL to git repo'
+
+Resources:
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - !Ref CodeBuildAccessPolicy
+
+  CodeBuildAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: ManagedPolicy for CodeBuild
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: '*'
+            Resource: '*'
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Join ['-', [!Ref pEnvName, !Ref 'AWS::Region', 'infrastructure']]
+      Artifacts:
+        Type: NO_ARTIFACTS
+      ServiceRole: !Ref CodeBuildRole
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/python:2.7.12
+      Source:
+        Type: GITHUB
+        Location: !Ref pRepoURL
+      BadgeEnabled: True
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref pEnvName, !Ref 'AWS::Region', 'infrastructure']]
+
+  CodeBuildTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Join ['-', [!Ref pEnvName, !Ref 'AWS::Region', 'code', 'build', 'trigger']]
+      ScheduleExpression: rate(2 hours)
+      Targets:
+        - Id: !Join ['-', [!Ref pEnvName, !Ref 'AWS::Region', 'code', 'build', 'project', 'reference']]
+          Arn: !GetAtt CodeBuildProject.Arn
+          RoleArn: !GetAtt CodeBuildRole.Arn

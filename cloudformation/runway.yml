@@ -1,0 +1,6 @@
+---
+deployments:
+  - modules:
+      - codebuild
+    regions:
+      - us-west-2
