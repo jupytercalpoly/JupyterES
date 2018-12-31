@@ -1,0 +1,13 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - pip install runway
+  pre_build:
+    commands:
+      - DEPLOY_ENVIRONMENT=production CI=1 runway test
+  build:
+    commands:
+      - cd cloudformation
+      - DEPLOY_ENVIRONMENT=production CI=1 runway deploy
